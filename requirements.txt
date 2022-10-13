@@ -1,0 +1,3 @@
+httpx
+nonebot2
+langid
