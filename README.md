@@ -52,7 +52,7 @@ draw_api = "你的token"
 对config.db 操作  
 `draw注入config sql语句`  
 user_data.db中的表：GROUP_CD,USER  
-GROUP_CD中有三个列：GROUP_ID,CD,FIRST_TIME,类型都是int
-USER中有四个列：QQ_ID,USED_TIME,TOTAL_TIME,FIRST_USE类型都是int
-config.db中的表：BAN_WORDS
-BAN_WORDS中有一个列：WORDS，类型是text
+GROUP_CD中有三个列：GROUP_ID,CD,FIRST_TIME,类型都是int  
+USER中有四个列：QQ_ID,USED_TIME,TOTAL_TIME,FIRST_USE类型都是int  
+config.db中的表：BAN_WORDS  
+BAN_WORDS中有一个列：WORDS，类型是text  
