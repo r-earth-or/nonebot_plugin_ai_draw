@@ -1,0 +1,4 @@
+nonebot
+httpx
+langid
+nonebot2
