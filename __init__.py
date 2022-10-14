@@ -34,6 +34,8 @@ __plugin_meta__ = PluginMetadata(
         "version": "1.0.0",
     },
 )
+if not os.path.exists(current_path + "temp"):
+    os.makedirs(current_path + "temp")
 
 
 async def translate(text):
