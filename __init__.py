@@ -131,7 +131,7 @@ async def draw_group(bot: Bot, event: GroupMessageEvent):
         # 检测是否需要翻译
         msg_id3 = (await draw_g.send("不建议输入中文的说"))["message_id"]
         _translate = True
-        text = translate(get_message[1])
+        text = await translate(get_message[1])
     else:
         _translate = False
         text = get_message[1]
@@ -186,7 +186,7 @@ async def draw_private(bot: Bot, event: PrivateMessageEvent):
         # 检测是否需要翻译
         msg_id3 = (await draw_p.send("不建议输入中文的说"))["message_id"]
         _translate = True
-        text = translate(get_message[1])
+        text = await translate(get_message[1])
     else:
         _translate = False
         text = get_message[1]
