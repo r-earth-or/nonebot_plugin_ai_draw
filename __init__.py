@@ -76,6 +76,12 @@ async def translate(text):
         await draw_g.finish("error,请参考日志")
 
 
+def give_time_back(userid, times):
+    user_data_con = sqlite3.connect(current_path + "user_data.db")
+    user_data_cur = user_data_con.cursor()
+    user_data_cur.execute(F"UPDATE USER SET USED_TIME = {times} WHERE QQ_ID={userid}")
+
+
 @draw_g.handle()
 async def draw_group(bot: Bot, event: GroupMessageEvent):
     config_con = sqlite3.connect(current_path + "config.db")
@@ -148,16 +154,25 @@ async def draw_group(bot: Bot, event: GroupMessageEvent):
     async with httpx.AsyncClient() as client:
         get_image = await client.get(url, timeout=None)
         get_image = get_image.content
-        load_data = json.loads(re.findall('{"steps".+?}', str(get_image))[0])
-        seed = load_data["seed"]
+        try:
+            load_data = json.loads(re.findall('{"steps".+?}', str(get_image))[0])
+            seed = load_data["seed"]
+        except IndexError:
+            give_time_back(userid, user_data[0][1] + 1)
+            await draw_g.finish("请求失败，请过段时间重试，次数已返还")
     file_name = current_path + "temp\\" + text + str(seed)
     if len(file_name) > 255:
         file_name = file_name[:255] + ".jpg"
     else:
         file_name = file_name + ".jpg"
-    file = open(file_name, mode="wb")
-    file.write(get_image)
-    file.close()
+    try:
+        file = open(file_name, mode="wb")
+        file.write(get_image)
+        file.close()
+    except:
+        logger.debug("文件保存出错")
+        give_time_back(userid, user_data[0][1] + 1)
+        await draw_g.finish("文件保存失败，请检查输入内容中是否存在奇怪的特殊字符")
     msg_id1 = (await draw_g.send(MessageSegment.image(f"file:///{file_name}")))["message_id"]
     await asyncio.sleep(60)
     msg_id2 = (await draw_g.send('再等你30秒我就撤回了哦~'))['message_id']
@@ -203,16 +218,23 @@ async def draw_private(bot: Bot, event: PrivateMessageEvent):
     async with httpx.AsyncClient() as client:
         get_image = await client.get(url, timeout=None)
         get_image = get_image.content
-        load_data = json.loads(re.findall('{"steps".+?}', str(get_image))[0])
-        seed = load_data["seed"]
+        try:
+            load_data = json.loads(re.findall('{"steps".+?}', str(get_image))[0])
+            seed = load_data["seed"]
+        except IndexError:
+            await draw_g.finish("请求失败，请过段时间重试")
     file_name = current_path + "temp\\" + text + str(seed)
     if len(file_name) > 255:
         file_name = file_name[:255] + ".jpg"
     else:
         file_name = file_name + ".jpg"
-    file = open(file_name, mode="wb")
-    file.write(get_image)
-    file.close()
+    try:
+        file = open(file_name, mode="wb")
+        file.write(get_image)
+        file.close()
+    except:
+        logger.debug("文件保存出错")
+        await draw_g.finish("文件保存失败，请检查输入内容中是否存在奇怪的特殊字符")
     msg_id1 = (await draw_p.send(MessageSegment.image(f"file:///{file_name}")))["message_id"]
     await asyncio.sleep(60)
     msg_id2 = (await draw_p.send('再等你30秒我就撤回了哦~'))['message_id']
@@ -294,3 +316,4 @@ async def inject_handle(bot: Bot, event: Event):
         config_con.commit()
         config_con.close()
         await inject.finish("执行成功")
+
