@@ -147,7 +147,7 @@ async def draw_group(bot: Bot, event: GroupMessageEvent):
     for i in ban_words:
         key_word = i[0]
         if text.find(key_word) != -1:
-            text.replace(key_word, "")
+            text = text.replace(key_word, "")
     if text.find(".") != -1:
         text = text.replace(".", ",")
     logger.info(text)
@@ -212,7 +212,7 @@ async def draw_private(bot: Bot, event: PrivateMessageEvent):
     for i in ban_words:
         key_word = i[0]
         if text.find(key_word) != -1:
-            text.replace(key_word, "")
+            text = text.replace(key_word, "")
     if text.find(".") != -1:
         text = text.replace(".", ",")
     logger.info(text)
