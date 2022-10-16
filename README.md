@@ -61,7 +61,7 @@ config.db中的表：BAN_WORDS，CONFIG
 BAN_WORDS中有一个列：WORDS，类型是text  
 CONFIG中有梁列：NAME和CONFIG，类型都是text  
 
-###更新日志  
+### 更新日志  
 2022.10.16  
 允许直接更改用户的初始次数（在config.db的CONFIG表中）  
 api地址也写入了这一个表  
