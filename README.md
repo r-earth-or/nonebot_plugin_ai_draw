@@ -45,7 +45,10 @@ draw_api = "你的token"
 4.设置用户次数  
 `draw设置用户 用户id 次数`  
 会同时更新可用次数和已经使用的次数，但不会更新次数刷新的时间  
-5.注入  
+5.修改用户初始次数
+`draw设置初始次数 次数`
+不会对已经进入user_data.db的用户进行操作
+6.注入  
 允许输入sql语句对数据库进行直接操作  
 对user_data.db 操作  
 `draw注入user sql语句`  
@@ -54,5 +57,14 @@ draw_api = "你的token"
 user_data.db中的表：GROUP_CD,USER  
 GROUP_CD中有三个列：GROUP_ID,CD,FIRST_TIME,类型都是int  
 USER中有四个列：QQ_ID,USED_TIME,TOTAL_TIME,FIRST_USE类型都是int  
-config.db中的表：BAN_WORDS  
+config.db中的表：BAN_WORDS，CONFIG  
 BAN_WORDS中有一个列：WORDS，类型是text  
+CONFIG中有梁列：NAME和CONFIG，类型都是text  
+
+###更新日志  
+2022.10.16  
+允许直接更改用户的初始次数（在config.db的CONFIG表中）  
+api地址也写入了这一个表  
+更新了路路的备用api地址  
+bug修复  
+注：本次更新需同时更新config.db和__init__.py  
