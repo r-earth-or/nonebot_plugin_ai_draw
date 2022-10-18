@@ -86,6 +86,10 @@ def give_time_back(userid, times):
 
 @draw_g.handle()
 async def draw_group(bot: Bot, event: GroupMessageEvent):
+    get_message = event.get_plaintext()
+    get_message = get_message.split(" ", 1)
+    if len(get_message) == 1:
+        await draw_p.finish()
     config_con = sqlite3.connect(current_path + "config.db")
     config_cur = config_con.cursor()
     ban_words = config_cur.execute('''SELECT WORDS FROM BAN_WORDS''').fetchall()
@@ -134,8 +138,6 @@ async def draw_group(bot: Bot, event: GroupMessageEvent):
         user_data_con.commit()
         config_con.close()
         user_data_con.close()
-    get_message = event.get_plaintext()
-    get_message = get_message.split(" ", 1)
     if langid.classify(get_message[1])[0] == "zh" or get_message[1] == "我老婆":
         # 检测是否需要翻译
         msg_id3 = (await draw_g.send("不建议输入中文的说"))["message_id"]
@@ -147,7 +149,7 @@ async def draw_group(bot: Bot, event: GroupMessageEvent):
     for i in ban_words:
         key_word = i[0]
         if text.find(key_word) != -1:
-            text = text.replace(key_word, "")
+            text = text.replace(key_word, " ")
     if text.find(".") != -1:
         text = text.replace(".", ",")
     logger.info(text)
@@ -161,7 +163,7 @@ async def draw_group(bot: Bot, event: GroupMessageEvent):
             load_data = json.loads(re.findall('{"steps".+?}', str(get_image))[0])
             seed = load_data["seed"]
         except IndexError:
-            give_time_back(userid, user_data[0][1] + 1)
+            give_time_back(userid, user_data[0][1])
             await draw_g.finish("请求失败，请过段时间重试，次数已返还")
     file_name = current_path + "temp\\" + text + str(seed)
     if len(file_name) > 255:
@@ -174,7 +176,7 @@ async def draw_group(bot: Bot, event: GroupMessageEvent):
         file.close()
     except:
         logger.debug("文件保存出错")
-        give_time_back(userid, user_data[0][1] + 1)
+        give_time_back(userid, user_data[0][1])
         await draw_g.finish("文件保存失败，请检查输入内容中是否存在奇怪的特殊字符")
     msg_id1 = (await draw_g.send(MessageSegment.image(f"file:///{file_name}")))["message_id"]
     await asyncio.sleep(60)
@@ -201,6 +203,8 @@ async def draw_private(bot: Bot, event: PrivateMessageEvent):
     api_address = config_cur.execute('''SELECT CONFIG FROM CONFIG WHERE NAME = "API_ADDRESS"''').fetchone()[0]
     get_message = event.get_plaintext()
     get_message = get_message.split(" ", 1)
+    if len(get_message) == 1:
+        await draw_p.finish()
     if langid.classify(get_message[1])[0] == "zh" or get_message[1] == "我老婆":
         # 检测是否需要翻译
         msg_id3 = (await draw_p.send("不建议输入中文的说"))["message_id"]
