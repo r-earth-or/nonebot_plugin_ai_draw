@@ -165,11 +165,9 @@ async def draw_group(bot: Bot, event: GroupMessageEvent):
         except IndexError:
             give_time_back(userid, user_data[0][1])
             await draw_g.finish("请求失败，请过段时间重试，次数已返还")
-    file_name = current_path + "temp\\" + text + str(seed)
-    if len(file_name) > 255:
-        file_name = file_name[:255] + ".jpg"
-    else:
-        file_name = file_name + ".jpg"
+    if len(text) >= 240:
+        text = text[:240]
+    file_name = current_path + "temp\\" + text + str(seed) + ".jpg"
     try:
         file = open(file_name, mode="wb")
         file.write(get_image)
@@ -231,11 +229,9 @@ async def draw_private(bot: Bot, event: PrivateMessageEvent):
             seed = load_data["seed"]
         except IndexError:
             await draw_g.finish("请求失败，请过段时间重试")
-    file_name = current_path + "temp\\" + text + str(seed)
-    if len(file_name) > 255:
-        file_name = file_name[:255] + ".jpg"
-    else:
-        file_name = file_name + ".jpg"
+    if len(text) >= 240:
+        text = text[:240]
+    file_name = current_path + "temp\\" + text + str(seed) + ".jpg"
     try:
         file = open(file_name, mode="wb")
         file.write(get_image)
