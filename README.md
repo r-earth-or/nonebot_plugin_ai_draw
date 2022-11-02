@@ -15,7 +15,7 @@ draw_api = "你的token"
 ```
 
 百度翻译api相关内容可以在[百度翻译api](https://api.fanyi.baidu.com/ )申请  
-路路的api的token可以点击[这里](http://91.217.139.190:5010/token "路佬牛逼")申请  
+路路的api的token可以点击[这里](http://lulu.uedbq.xyz/token "路佬牛逼")申请  
 
 ## 使用方法  
 
