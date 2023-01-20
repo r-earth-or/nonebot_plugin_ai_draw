@@ -17,8 +17,7 @@ from nonebot.permission import SUPERUSER
 from nonebot.plugin.on import on_startswith
 from nonebot.plugin.plugin import PluginMetadata
 
-draw_g = on_startswith("画画", priority=51, block=False)
-draw_p = on_startswith("画画", priority=52)
+draw = on_startswith("画画", priority=51)
 set_data = on_startswith("draw设置", priority=30, permission=SUPERUSER)
 inject = on_startswith("draw注入", priority=30, permission=SUPERUSER)
 
@@ -34,8 +33,7 @@ __plugin_meta__ = PluginMetadata(
         "version": "1.0.0",
     },
 )
-if not os.path.exists(current_path + "temp"):
-    os.makedirs(current_path + "temp")
+
 
 
 async def translate(text):
@@ -65,7 +63,7 @@ async def translate(text):
                 success = True
     if not success:
         logger.debug("翻译失败")
-        await draw_g.finish("error,请参考日志")
+        await draw.finish("error,请参考日志")
     json_data = json_data.json()
     logger.debug(f"结果: {json_data}")
     if "error_code" not in json_data.keys():
@@ -73,7 +71,7 @@ async def translate(text):
         return _result['dst']
     else:
         logger.debug("翻译返回文件出错")
-        await draw_g.finish("error,请参考日志")
+        await draw.finish("error,请参考日志")
 
 
 def give_time_back(userid, times):
@@ -84,63 +82,69 @@ def give_time_back(userid, times):
     user_data_con.close()
 
 
-@draw_g.handle()
-async def draw_group(bot: Bot, event: GroupMessageEvent):
+@draw.handle()
+async def draw_all(bot: Bot, event: Event):
+    is_group = isinstance(event, GroupMessageEvent)
     get_message = event.get_plaintext()
     get_message = get_message.split(" ", 1)
     if len(get_message) == 1:
-        await draw_p.finish()
+        await draw.finish()
     config_con = sqlite3.connect(current_path + "config.db")
     config_cur = config_con.cursor()
     ban_words = config_cur.execute('''SELECT WORDS FROM BAN_WORDS''').fetchall()
     api_address = config_cur.execute('''SELECT CONFIG FROM CONFIG WHERE NAME = "API_ADDRESS"''').fetchone()[0]
-    user_init_times = int(config_cur.execute('''SELECT CONFIG FROM CONFIG WHERE NAME = "USER_INIT_TIMES"''').fetchone()[0])
-    user_data_con = sqlite3.connect(current_path + "user_data.db")
-    user_data_cur = user_data_con.cursor()
-    groupid = int(event.group_id)
-    group_data = user_data_cur.execute(f'''SELECT * FROM GROUP_CD WHERE GROUP_ID = {groupid}''').fetchall()
-    if len(group_data) == 0:
-        # 注册群冷却
-        logger.debug(2)
-        user_data_cur.execute('''insert into GROUP_CD values(?,?,?)''', (groupid, 10, 0))
-        user_data_con.commit()
-        group_data = [(groupid, 10, 0)]
-    userid = int(event.user_id)
+    user_init_times = int(
+        config_cur.execute('''SELECT CONFIG FROM CONFIG WHERE NAME = "USER_INIT_TIMES"''').fetchone()[0])
+    config_con.close()
+    if is_group:
+        user_data_con = sqlite3.connect(current_path + "user_data.db")
+        user_data_cur = user_data_con.cursor()
+        group_id = int(event.group_id)
+        group_data = user_data_cur.execute(f'''SELECT * FROM GROUP_CD WHERE GROUP_ID = {group_id}''').fetchall()
+        if len(group_data) == 0:
+            # 注册群冷却
+            logger.debug(2)
+            user_data_cur.execute('''insert into GROUP_CD values(?,?,?)''', (group_id, 10, 0))
+            user_data_con.commit()
+            group_data = [(group_id, 10, 0)]
+        userid = int(event.user_id)
 
-    user_data = user_data_cur.execute(f'''SELECT * FROM USER WHERE QQ_ID = {userid}''').fetchall()
-    if len(user_data) == 0:
-        # 注册个人使用次数限制
-        logger.debug(4)
-        user_data_cur.execute('''insert into USER values(?,?,?,?)''', (userid, user_init_times, user_init_times, int(time.time())))
-        user_data_con.commit()
-        user_data = [(userid, user_init_times, user_init_times, int(time.time()))]
-    logger.debug(f"{group_data}{user_data}")
-    if int(group_data[0][2]) + int(group_data[0][1]) > int(time.time()):
-        await draw_g.finish("冷却中")
-        config_con.close()
-        user_data_con.close()
-    if user_data[0][3] + 86400 < int(time.time()):
-        # 与上次使用时间间隔24小时后更新使用次数并更新数据
-        logger.debug(5)
-        user_data_cur.execute(F'''UPDATE USER SET USED_TIME = {user_data[0][2]} WHERE QQ_ID = {userid}''')
-        user_data_cur.execute(F'''UPDATE USER SET FIRST_USE = {int(time.time())} WHERE QQ_ID = {userid}''')
-        user_data_con.commit()
         user_data = user_data_cur.execute(f'''SELECT * FROM USER WHERE QQ_ID = {userid}''').fetchall()
-    if user_data[0][1] == 0:
-        await draw_g.finish("你的使用次数用完了哦")
-        config_con.close()
-        user_data_con.close()
+        if len(user_data) == 0:
+            # 注册个人使用次数限制
+            logger.debug(4)
+            user_data_cur.execute('''insert into USER values(?,?,?,?)''',
+                                  (userid, user_init_times, user_init_times, int(time.time())))
+            user_data_con.commit()
+            user_data = [(userid, user_init_times, user_init_times, int(time.time()))]
+        logger.debug(f"{group_data}{user_data}")
+        if int(group_data[0][2]) + int(group_data[0][1]) > int(time.time()):
+            await draw.finish("冷却中")
+            user_data_con.close()
+        if user_data[0][3] + 86400 < int(time.time()):
+            # 与上次使用时间间隔24小时后更新使用次数并更新数据
+            logger.debug(5)
+            user_data_cur.execute(F'''UPDATE USER SET USED_TIME = {user_data[0][2]} WHERE QQ_ID = {userid}''')
+            user_data_cur.execute(F'''UPDATE USER SET FIRST_USE = {int(time.time())} WHERE QQ_ID = {userid}''')
+            user_data_con.commit()
+            user_data = user_data_cur.execute(f'''SELECT * FROM USER WHERE QQ_ID = {userid}''').fetchall()
+        if user_data[0][1] == 0:
+            await draw.finish("你的使用次数用完了哦")
+            user_data_con.close()
+        else:
+            # 使用次数并更新群cd
+            await draw.send(f"你今天还有{user_data[0][1] - 1}次画画次数")
+            user_data_cur.execute(f'''UPDATE USER SET USED_TIME = {user_data[0][1] - 1} WHERE QQ_ID = {userid}''')
+            user_data_cur.execute(
+                f'''UPDATE GROUP_CD SET FIRST_TIME = {int(time.time())} WHERE GROUP_ID = {group_id}''')
+            user_data_con.commit()
+            config_con.close()
+            user_data_con.close()
     else:
-        # 使用次数并更新群cd
-        await draw_g.send(f"你今天还有{user_data[0][1] - 1}次画画次数")
-        user_data_cur.execute(f'''UPDATE USER SET USED_TIME = {user_data[0][1] - 1} WHERE QQ_ID = {userid}''')
-        user_data_cur.execute(f'''UPDATE GROUP_CD SET FIRST_TIME = {int(time.time())} WHERE GROUP_ID = {groupid}''')
-        user_data_con.commit()
-        config_con.close()
-        user_data_con.close()
+        pass
     if langid.classify(get_message[1])[0] == "zh" or get_message[1] == "我老婆":
         # 检测是否需要翻译
-        msg_id3 = (await draw_g.send("不建议输入中文的说"))["message_id"]
+        msg_id3 = (await draw.send("不建议输入中文的说"))["message_id"]
         _translate = True
         text = await translate(get_message[1])
     else:
@@ -163,22 +167,26 @@ async def draw_group(bot: Bot, event: GroupMessageEvent):
             load_data = json.loads(re.findall('{"steps".+?}', str(get_image))[0])
             seed = load_data["seed"]
         except IndexError:
+            if is_group:
+                give_time_back(userid, user_data[0][1])
+                await draw.finish("请求失败，请过段时间重试，次数已返还")
+            else:
+                await draw.finish("请求失败，请稍后再试")
+    if len(text) >= 240:
+        text = text[:240]
+    file_name = current_path + "temp\\" + text + str(seed) + ".jpg"
+    try:
+        file = open(file_name, mode="wb")
+        file.write(get_image)
+        file.close()
+    except:
+        logger.debug("文件保存出错")
+        if is_group:
             give_time_back(userid, user_data[0][1])
-            await draw_g.finish("请求失败，请过段时间重试，次数已返还")
-    if len(text) >= 240:
-        text = text[:240]
-    file_name = current_path + "temp\\" + text + str(seed) + ".jpg"
-    try:
-        file = open(file_name, mode="wb")
-        file.write(get_image)
-        file.close()
-    except:
-        logger.debug("文件保存出错")
-        give_time_back(userid, user_data[0][1])
-        await draw_g.finish("文件保存失败，请检查输入内容中是否存在奇怪的特殊字符")
-    msg_id1 = (await draw_g.send(MessageSegment.image(f"file:///{file_name}")))["message_id"]
+        await draw.finish("文件保存失败，请检查输入内容中是否存在奇怪的特殊字符")
+    msg_id1 = (await draw.send(MessageSegment.image(f"file:///{file_name}")))["message_id"]
     await asyncio.sleep(60)
-    msg_id2 = (await draw_g.send('再等你30秒我就撤回了哦~'))['message_id']
+    msg_id2 = (await draw.send('再等你30秒我就撤回了哦~'))['message_id']
     await asyncio.sleep(30)
     await bot.call_api('delete_msg', **{
         'message_id': msg_id1
@@ -190,70 +198,7 @@ async def draw_group(bot: Bot, event: GroupMessageEvent):
         await bot.call_api('delete_msg', **{
             'message_id': msg_id3
         })
-    await draw_g.finish()
-
-
-@draw_p.handle()
-async def draw_private(bot: Bot, event: PrivateMessageEvent):
-    config_con = sqlite3.connect(current_path + "config.db")
-    config_cur = config_con.cursor()
-    ban_words = config_cur.execute('''SELECT WORDS FROM BAN_WORDS''').fetchall()
-    api_address = config_cur.execute('''SELECT CONFIG FROM CONFIG WHERE NAME = "API_ADDRESS"''').fetchone()[0]
-    get_message = event.get_plaintext()
-    get_message = get_message.split(" ", 1)
-    if len(get_message) == 1:
-        await draw_p.finish()
-    if langid.classify(get_message[1])[0] == "zh" or get_message[1] == "我老婆":
-        # 检测是否需要翻译
-        msg_id3 = (await draw_p.send("不建议输入中文的说"))["message_id"]
-        _translate = True
-        text = await translate(get_message[1])
-    else:
-        _translate = False
-        text = get_message[1]
-    for i in ban_words:
-        key_word = i[0]
-        if text.find(key_word) != -1:
-            text = text.replace(key_word, "")
-    if text.find(".") != -1:
-        text = text.replace(".", ",")
-    logger.info(text)
-    # 输出过滤后的结果
-    token = get_driver().config.draw_api
-    url = api_address + "got_image?tags=" + text + f"&r18=0&token={token}"
-    async with httpx.AsyncClient() as client:
-        get_image = await client.get(url, timeout=None)
-        get_image = get_image.content
-        try:
-            load_data = json.loads(re.findall('{"steps".+?}', str(get_image))[0])
-            seed = load_data["seed"]
-        except IndexError:
-            await draw_g.finish("请求失败，请过段时间重试")
-    if len(text) >= 240:
-        text = text[:240]
-    file_name = current_path + "temp\\" + text + str(seed) + ".jpg"
-    try:
-        file = open(file_name, mode="wb")
-        file.write(get_image)
-        file.close()
-    except:
-        logger.debug("文件保存出错")
-        await draw_g.finish("文件保存失败，请检查输入内容中是否存在奇怪的特殊字符")
-    msg_id1 = (await draw_p.send(MessageSegment.image(f"file:///{file_name}")))["message_id"]
-    await asyncio.sleep(60)
-    msg_id2 = (await draw_p.send('再等你30秒我就撤回了哦~'))['message_id']
-    await asyncio.sleep(30)
-    await bot.call_api('delete_msg', **{
-        'message_id': msg_id1
-    })
-    await bot.call_api('delete_msg', **{
-        'message_id': msg_id2
-    })
-    if _translate:
-        await bot.call_api('delete_msg', **{
-            'message_id': msg_id3
-        })
-    await draw_g.finish()
+    await draw.finish()
 
 
 @set_data.handle()
@@ -282,10 +227,10 @@ async def set_data_handle(bot: Bot, event: GroupMessageEvent):
         user_data_con = sqlite3.connect(current_path + "user_data.db")
         user_data_cur = user_data_con.cursor()
         if len(text) == 2:
-            groupid = int(event.group_id)
+            group_id = int(event.group_id)
         else:
-            groupid = int(text[1])
-        user_data_cur.execute(f'''UPDATE GROUP_CD SET CD = {int(text[-1])} WHERE GROUP_ID = {groupid}''')
+            group_id = int(text[1])
+        user_data_cur.execute(f'''UPDATE GROUP_CD SET CD = {int(text[-1])} WHERE GROUP_ID = {group_id}''')
         user_data_con.commit()
         user_data_con.close()
         await set_data.finish("群cd已改为" + text[-1])
@@ -329,3 +274,13 @@ async def inject_handle(bot: Bot, event: Event):
         config_con.commit()
         config_con.close()
         await inject.finish("执行成功")
+
+
+if "config.db" not in os.listdir(current_path):
+    from .data_init import config_init
+    config_init()
+if "user_data.db" not in os.listdir(current_path):
+    from .data_init import userdata_init
+    userdata_init()
+if not os.path.exists(current_path + "temp"):
+    os.makedirs(current_path + "temp")
