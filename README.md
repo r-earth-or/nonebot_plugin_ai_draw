@@ -6,7 +6,7 @@
 
 ## 安装
 使用git clone或直接下载本插件  
-把__init__.py和config.db,user_data.db放入nonebot的插件目录的同一文件夹下  
+把__init__.py和data_init放入nonebot的插件目录的同一文件夹下  
 在.env.dev中加入如下内容  
 ```
 baidu_translate_appid= "你的百度翻译appid"" 
