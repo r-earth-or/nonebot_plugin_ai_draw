@@ -1,5 +1,5 @@
 # nonebot_plugin_ai_draw  
-
+# 目前无法使用  
 这个插件是基于第三方api的novel ai 插件，使用了sqlite3进行违禁词管理，用户次数管理和群冷却管理  
 所获取的图片均保存在本插件目录下temp文件夹内 ~~(可以光明正大地收集色图了好耶)~~  
 ~~(屎山)~~
@@ -15,7 +15,7 @@ draw_api = "你的token"
 ```
 
 百度翻译api相关内容可以在[百度翻译api](https://api.fanyi.baidu.com/ )申请  
-路路的api的token可以点击[这里](http://lulu.uedbq.xyz/token "路佬牛逼")申请  
+~~路路的api的token可以点击[这里](http://lulu.uedbq.xyz/token "路佬牛逼")申请~~接口寄了  
 
 ## 使用方法  
 
